@@ -4659,6 +4659,7 @@ IDE_Morph.prototype.newProject = function () {
     SpriteMorph.prototype.useFlatLineEnds = false;
     Process.prototype.enableLiveCoding = false;
     Process.prototype.enableHyperOps = true;
+    this.hiddenCategories = [];
     this.setProjectName('');
     this.projectNotes = '';
     this.createStage();

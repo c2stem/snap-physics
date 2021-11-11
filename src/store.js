@@ -587,6 +587,10 @@ SnapSerializer.prototype.rawLoadProjectModel = function (xmlNode, remixID) {
             (model.stage.attributes.penlog === 'true');
     }
 
+    // hide category
+    project.hiddenCategories = model.stage.attributes.hiddenCategories || '';
+    project.hiddenCategories = project.hiddenCategories === '' ? [] : project.hiddenCategories.split(' ');
+
     model.pentrails = model.stage.childNamed('pentrails');
     if (model.pentrails) {
         project.pentrails = new Image();
@@ -2006,6 +2010,9 @@ SnapSerializer.prototype.openProject = function (project, ide) {
     if (ide.globalVariables) {
         ide.globalVariables = project.globalVariables;
     }
+    // hide category
+    ide.hiddenCategories = project.hiddenCategories || [];
+
     if (stage) {
         stage.destroy();
     }
@@ -2026,6 +2033,7 @@ SnapSerializer.prototype.openProject = function (project, ide) {
         ide.hasChangedMedia = true;
     }
     project.stage.fixLayout();
+    ide.createCategories();
     ide.createCorral();
     ide.selectSprite(sprite);
     ide.fixLayout();
@@ -2107,7 +2115,8 @@ StageMorph.prototype.toXML = function (serializer) {
             'codify="@" ' +
             'inheritance="@" ' +
             'sublistIDs="@" ' +
-            'scheduled="@" ~>' +
+            'scheduled="@" ' +
+            'hiddenCategories="@" ~>' +
             '<pentrails>$</pentrails>' +
             '%' + // current costume, if it's not in the wardrobe
             '<costumes>%</costumes>' +
@@ -2154,6 +2163,7 @@ StageMorph.prototype.toXML = function (serializer) {
         this.enableInheritance,
         this.enableSublistIDs,
         StageMorph.prototype.frameRate !== 0,
+        ide ? ide.hiddenCategories.join(' ') : '',
         normalizeCanvas(this.trailsCanvas, true).toDataURL('image/png'),
 
         // current costume, if it's not in the wardrobe
@@ -2224,7 +2234,8 @@ StageMorph.prototype.toPortableXML = function (serializer, mediaID) {
             'codify="@" ' +
             'inheritance="@" ' +
             'sublistIDs="@" ' +
-            'scheduled="@" ~>' +
+            'scheduled="@" ' +
+            'hiddenCategories="@" ~>' +
             '<pentrails>$</pentrails>' +
             '<costumes>%</costumes>' +
             '<sounds>%</sounds>' +
@@ -2259,6 +2270,7 @@ StageMorph.prototype.toPortableXML = function (serializer, mediaID) {
         this.enableInheritance,
         this.enableSublistIDs,
         StageMorph.prototype.frameRate !== 0,
+        ide ? ide.hiddenCategories.join(' ') : '',
         '',
         serializer.store(this.costumes, this.name + '_cst'),
         serializer.store(this.sounds, this.name + '_snd'),
