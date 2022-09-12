@@ -105,7 +105,19 @@
                 type: 'run-script'
             });
         }
+        
+        async getGlobalVariables() {
+            const reqData = {type: 'global-variables'};
+            const data = await this.reqReply(reqData);
+            return data.variables;
+        }
 
+        async getStageImage() {
+            const reqData = {type: 'stage-image'};
+            const data = await this.reqReply(reqData);
+            return data.stageImage;
+        }
+        
         genUuid() {
             return Date.now() + Math.floor(Math.random() * 1000);
         }
