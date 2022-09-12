@@ -442,6 +442,21 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
             self.events.removeEventListener(eventType, listenerId);
             event.source.postMessage({id, type: 'reply'}, event.origin);
         }
+        case 'save-cloud':
+            self.saveProjectToCloud(data.name);
+            break;
+        
+        case 'publish':
+            if (data.publish){
+                cps = new CloudProjectsSource(self);
+                cps.publish(data);
+            }else{
+                break;
+            }
+            break;
+        case 'run-script':
+            self.runScripts();
+            break;
         }
     };
 
