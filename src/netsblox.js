@@ -714,6 +714,7 @@ NetsBloxMorph.prototype.saveProjectToCloud = function (name) {
                     }
                     if (overwrite) {
                         myself.showMessage('Saved ' + contentName + ' to cloud!', 2);
+                        myself.events.dispatchEvent(new CustomEvent('projectSaved'));
                     } else {
                         myself.showMessage('Saved as ' + myself.room.name, 2);
                     }
