@@ -7383,6 +7383,7 @@ SaveOpenDialogMorph.prototype.trySaveItem = async function() {
             await this.saveItem(newItem);
             this.ide.showMessage(savedMsg, 2);
             this.destroy();
+            this.ide.events.dispatchEvent(new CustomEvent('projectSaved'));
         } catch (err) {
             this.ide.cloudError().call(null, err.label, err.message);
         }
