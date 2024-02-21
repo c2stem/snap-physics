@@ -4,3 +4,4 @@
 dist/app.js
 .server
 .vscode/
+.idea
