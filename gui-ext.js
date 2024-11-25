@@ -484,3 +484,122 @@ IDE_Morph.prototype.mobileMode.positionButtons = function(buttons, controls) {
     });
 
 };
+IDE_Morph.prototype.initializeEmbeddedAPI = function () {
+    var self = this,
+        externalVariables = {},
+        receiveMessage;
+
+    receiveMessage = async function(event) {
+        var data = event.data;
+        switch (data.type) {
+            case 'import':
+                self.droppedText(data.content, data.name, data.fileType);
+                break;
+            case 'set-variable':
+                externalVariables[data.key] = data.value;
+                break;
+            case 'delete-variable':
+                delete externalVariables[data.key];
+                break;
+            case 'export-project':
+            {
+                const {id} = data;
+                const xml = await self.getProjectXML();
+                const type = 'reply';
+                event.source.postMessage({id, type, xml}, event.origin);
+                break;
+            }
+            case 'get-username':
+            {
+                const {id} = data;
+                const {username} = SnapCloud;
+                const type = 'reply';
+                event.source.postMessage({id, type, username}, event.origin);
+                break;
+            }
+            case 'add-listener':
+            {
+                const {id, eventType, listenerId} = data;
+                const {source, origin} = event;
+                const callback = event => {
+                    source.postMessage({
+                        type: 'event',
+                        eventType: event.type,
+                        detail: event.detail,
+                    }, origin);
+                };
+                self.events.addEventListener(eventType, listenerId, callback);
+                source.postMessage({id, type: 'reply'}, origin);
+                break;
+            }
+            case 'remove-listener':
+            {
+                const {id, eventType, listenerId} = data;
+                self.events.removeEventListener(eventType, listenerId);
+                event.source.postMessage({id, type: 'reply'}, event.origin);
+            }
+            case 'save-cloud':
+                self.saveProjectToCloud(data.name);
+                break;
+
+            case 'publish':
+                if (data.publish){
+                    cps = new CloudProjectsSource(self);
+                    cps.publish(data);
+                }else{
+                    break;
+                }
+                break;
+            case 'run-script':
+                self.runScripts();
+                if (self.embedOverlay) {
+                    self.embedOverlay.destroy();
+                    self.embedPlayButton.destroy();
+                }
+                break;
+            case 'global-variables':
+            {
+                const {id} = data;
+                const variables = self.globalVariables;
+                const type = 'reply';
+                event.source.postMessage({id, type, variables}, event.origin);
+                break;
+            }
+            case 'stage-image':
+            {
+                const {id} = data;
+                var stage = self.children.filter(morph => morph.name === 'Stage')[0];
+                const stageImage = stage.fullImage().toDataURL();
+                const type = 'reply';
+                event.source.postMessage({id, type, stageImage}, event.origin);
+                break;
+            }
+
+        }
+    };
+
+    window.externalVariables = externalVariables;
+    window.addEventListener('message', receiveMessage, false);
+};
+
+class Events extends EventTarget {
+    constructor() {
+        super();
+        this._listeners = {};
+    }
+
+    _registerListener(id, callback) {
+        this._listeners[id] = callback;
+    }
+
+    addEventListener(type, id, callback) {
+        this._registerListener(id, callback);
+        return super.addEventListener(type, callback);
+    }
+
+    removeEventListener(type, id) {
+        const callback = this._listeners[id];
+        delete this._listeners[id];
+        return super.removeEventListener(type, callback);
+    }
+}

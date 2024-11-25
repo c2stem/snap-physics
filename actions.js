@@ -456,6 +456,7 @@ ActionManager.prototype._isBatchEvent = function(msg) {
 ActionManager.prototype.onReceiveAction = function(msg) {
     if (this.isPreviousAction(msg) && !this.isAlwaysAllowed(msg)) return;
     if (this.isUserAction(msg)) {
+        this.afterActionApplied(msg);
         if (!SnapUndo.contains(msg)) {
             SnapUndo.record(msg);
         }
@@ -3027,7 +3028,7 @@ ActionManager.prototype.__clearTarget = function(id) {
     delete this._targetOf[id];
 };
 
-ActionManager.prototype.afterActionApplied = function(/*msg*/) {
+ActionManager.prototype.afterActionApplied = function(action) {
     // Update the undo buttons of the focused window
     var ide = this.ide(),
         active = ide.activeEditor;
@@ -3036,6 +3037,7 @@ ActionManager.prototype.afterActionApplied = function(/*msg*/) {
     // a custom block)
 
     active.onSetActive();
+    ide.events.dispatchEvent(new CustomEvent('action', {detail: action}));
 };
 
 ActionManager.prototype.onMessage = function(msg) {

@@ -282,6 +282,7 @@ IDE_Morph.prototype.init = function (isAutoFill) {
     this.hiddenCorralButtons = [];
     this.hiddenControlButtons = [];
     this.activeEditor = this;
+    this.events = new Events();
 };
 
 IDE_Morph.prototype.openIn = function (world) {
@@ -350,6 +351,7 @@ IDE_Morph.prototype.openIn = function (world) {
     } else {
         this.interpretUrlAnchors();
     }
+    this.initializeEmbeddedAPI();
 };
 
 IDE_Morph.prototype.interpretUrlAnchors = function (loc) {

@@ -2,4 +2,5 @@
 *.swp
 .tern-port
 .eslintrc.json
+.idea/
 dist/
