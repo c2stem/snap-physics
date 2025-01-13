@@ -483,6 +483,24 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
         cps.delete(data);
         break;
       }
+      case "stage-sprites": {
+        let stageMaterials = {};
+        const { id } = data;
+        var stage = self.children.filter((morph) => morph.name === "Stage")[0];
+        var sprites = stage.children.filter((morph) =>
+          ["A", "D", "E", "F", "G", "I", "J", "L", "M", "N", "O", "P"].includes(
+            morph.name
+          )
+        );
+        if (sprites.length === 12) {
+          sprites.map((morph) => {
+            stageMaterials[morph.name] = morph.costume.name;
+          });
+        }
+        const type = "reply";
+        event.source.postMessage({ id, type, stageMaterials }, event.origin);
+        break;
+      }
     }
   };
 

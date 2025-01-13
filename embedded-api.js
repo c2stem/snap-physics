@@ -125,6 +125,12 @@
       });
     }
 
+    async getEngineeringStageMaterials() {
+      const reqData = { type: "stage-sprites" };
+      const data = await this.reqReply(reqData);
+      return data.stageMaterials;
+    }
+
     genUuid() {
       return Date.now() + Math.floor(Math.random() * 1000);
     }
