@@ -5811,6 +5811,7 @@ IDE_Morph.prototype.saveProjectToCloud = function (name) {
                     myself.room.silentSetRoomName(result.name);
                 }
                 myself.showMessage('Saved ' + contentName + ' to the cloud!', 2);
+                myself.events.dispatchEvent(new CustomEvent('projectSaved'));
             },
             this.cloudSaveError()
         );
