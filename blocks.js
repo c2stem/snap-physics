@@ -6395,7 +6395,8 @@ ScriptsMorph.prototype.updateUndoControls = function () {
 
     if (SnapUndo.canUndo(owner)) {
         if (!sf.toolBar.undoButton.isEnabled()) {
-            sf.toolBar.undoButton.enable();
+            // sf.toolBar.undoButton.enable();
+            sf.toolBar.undoButton.disable();
             changed = true;
         }
     } else if (sf.toolBar.undoButton.isEnabled()) {
@@ -6405,7 +6406,8 @@ ScriptsMorph.prototype.updateUndoControls = function () {
 
     if (SnapUndo.canRedo(owner)) {
         if (!sf.toolBar.redoButton.isEnabled()) {
-            sf.toolBar.redoButton.enable();
+            // sf.toolBar.redoButton.enable();
+            sf.toolBar.redoButton.disable();
             sf.toolBar.undoButton.mouseLeave();
             changed = true;
         }
@@ -6416,9 +6418,9 @@ ScriptsMorph.prototype.updateUndoControls = function () {
 
     // both buttons should always be visible
     if (!sf.toolBar.undoButton.isVisible || !sf.toolBar.redoButton.isVisible) {
-        sf.toolBar.undoButton.show();
-        sf.toolBar.redoButton.show();
-        changed = true;
+        // sf.toolBar.undoButton.show();
+        // sf.toolBar.redoButton.show();
+        // changed = true;
     }
 
     if (changed || !sf.toolBar.isVisible) {
