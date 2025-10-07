@@ -6426,8 +6426,8 @@ ScriptsMorph.prototype.updateUndoControls = function () {
     if (changed || !sf.toolBar.isVisible) {
         sf.toolBar.isVisible = false;
         // sf.toolBar.isVisible = true;
-        sf.toolBar.drawNew();
-        sf.toolBar.changed();
+        // sf.toolBar.drawNew();
+        // sf.toolBar.changed();
     }
 
     sf.adjustToolBar();
