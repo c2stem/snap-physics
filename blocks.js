@@ -6204,26 +6204,26 @@ ScriptsMorph.prototype.userMenu = function () {
             menu.addItem('show hidden code', 'showHiddenCode');
         }
         menu.addLine();
-        menu.addItem(
-            'make a block...',
-            function () {
-                new BlockDialogMorph(
-                    null,
-                    function (definition) {
-                        SnapActions.addCustomBlock(definition, obj)
-                            .then(function(def) {
-                                var editor = new BlockEditorMorph(def, obj);
-                                editor.popUp();
-                            });
-                    },
-                    myself
-                ).prompt(
-                    'Make a block',
-                    null,
-                    myself.world()
-                );
-            }
-        );
+        // menu.addItem(
+        //     'make a block...',
+        //     function () {
+        //         new BlockDialogMorph(
+        //             null,
+        //             function (definition) {
+        //                 SnapActions.addCustomBlock(definition, obj)
+        //                     .then(function(def) {
+        //                         var editor = new BlockEditorMorph(def, obj);
+        //                         editor.popUp();
+        //                     });
+        //             },
+        //             myself
+        //         ).prompt(
+        //             'Make a block',
+        //             null,
+        //             myself.world()
+        //         );
+        //     }
+        // );
     }
     return menu;
 };
