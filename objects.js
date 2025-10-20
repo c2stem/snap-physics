@@ -2561,20 +2561,20 @@ SpriteMorph.prototype.freshPalette = function (category) {
                 });
         }
         if (category === 'simulation') {
-            menu.addItem(
-                'make a concept',
-                function () {
-                    new ConceptDialogMorph(
-                        myself.getStage(),
-                        StageMorph.prototype.addCustomConcept,
-                        null
-                    ).prompt(
-                        'Make a concept',
-                        null,
-                        myself.world()
-                    );
-                }
-            );
+            // menu.addItem(
+            //     'make a concept',
+            //     function () {
+            //         new ConceptDialogMorph(
+            //             myself.getStage(),
+            //             StageMorph.prototype.addCustomConcept,
+            //             null
+            //         ).prompt(
+            //             'Make a concept',
+            //             null,
+            //             myself.world()
+            //         );
+            //     }
+            // );
             if (stage.customConcepts.length > 0) {
                 menu.addItem(
                     'delete a concept',
