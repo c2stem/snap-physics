@@ -6216,7 +6216,7 @@ StageMorph.prototype.fireGreenFlagEvent = function () {
     });
     let sortedHats = [...hats].sort((a, b) => {
         const hatA = parseInt(a.parent.owner.id.split("_")[1]);
-        const hatB = parseInt(a.parent.owner.id.split("_")[1]);
+        const hatB = parseInt(b.parent.owner.id.split("_")[1]);
         return hatA - hatB;
     })
     sortedHats.forEach(function (block) {
