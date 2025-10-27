@@ -6214,7 +6214,12 @@ StageMorph.prototype.fireGreenFlagEvent = function () {
             hats = hats.concat(morph.allHatBlocksFor('__shout__go__'));
         }
     });
-    hats.forEach(function (block) {
+    let sortedHats = [...hats].sort((a, b) => {
+        const hatA = parseInt(a.parent.owner.id.split("_")[1]);
+        const hatB = parseInt(a.parent.owner.id.split("_")[1]);
+        return hatA - hatB;
+    })
+    sortedHats.forEach(function (block) {
         procs.push(myself.threads.startProcess(
             block,
             myself.isThreadSafe
