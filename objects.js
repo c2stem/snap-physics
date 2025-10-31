@@ -6215,10 +6215,17 @@ StageMorph.prototype.fireGreenFlagEvent = function () {
         }
     });
     let sortedHats = [...hats].sort((a, b) => {
-        const hatA = parseInt(a.parent.owner.id.split("_")[1]);
-        const hatB = parseInt(b.parent.owner.id.split("_")[1]);
-        return hatA - hatB;
-    })
+        const hatStructure = a.parent.owner.id.split("_");
+        if (hatStructure.length > 2) {
+            const hatA = parseInt(a.parent.owner.id.split("_")[2]);
+            const hatB = parseInt(b.parent.owner.id.split("_")[2]);
+            return hatB - hatA;
+        } else {
+            const hatA = parseInt(a.parent.owner.id.split("_")[1]);
+            const hatB = parseInt(b.parent.owner.id.split("_")[1]);
+            return hatA - hatB;
+        }
+    });
     sortedHats.forEach(function (block) {
         procs.push(myself.threads.startProcess(
             block,
