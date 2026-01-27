@@ -978,6 +978,7 @@ var sb = (function (sb) {
 			// Variables
 			'setVar:to:': 'doSetVar',
 			'changeVar:by:': 'doChangeVar',
+			'increaseVar:by:': 'doIncreaseVar',
 			// 'deleteObject:': '',
 			'showVariable:': 'doShowVar',
 			'hideVariable:': 'doHideVar',
