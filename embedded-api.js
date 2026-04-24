@@ -106,6 +106,21 @@
       });
     }
 
+    setVariable(key, value) {
+      this.call({
+        type: "set-variable",
+        key,
+        value,
+      });
+    }
+
+    deleteVariable(key) {
+      this.call({
+        type: "delete-variable",
+        key,
+      });
+    }
+
     async getGlobalVariables() {
       const reqData = { type: "global-variables" };
       const data = await this.reqReply(reqData);
