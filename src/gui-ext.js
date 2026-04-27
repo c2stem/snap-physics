@@ -457,6 +457,13 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
         }
         break;
       case "run-script":
+        if (data.variables && typeof data.variables === "object") {
+          Object.entries(data.variables).forEach(function ([name, value]) {
+            if (self.globalVariables.vars[name]) {
+              self.globalVariables.vars[name].value = value;
+            }
+          });
+        }
         self.runScripts();
         if (self.embedOverlay) {
           self.embedOverlay.destroy();
