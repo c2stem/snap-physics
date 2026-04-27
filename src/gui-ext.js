@@ -442,6 +442,16 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
             self.events.removeEventListener(eventType, listenerId);
             event.source.postMessage({id, type: 'reply'}, event.origin);
         }
+        case 'run-script':
+            if (data.variables && typeof data.variables === 'object') {
+                Object.entries(data.variables).forEach(function([name, value]) {
+                    if (self.globalVariables.vars[name]) {
+                        self.globalVariables.vars[name].value = value;
+                    }
+                });
+            }
+            self.runScripts();
+            break;
         }
     };
 

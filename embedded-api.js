@@ -85,6 +85,14 @@
             });
         }
 
+        async runProject(variables) {
+            const msg = {type: 'run-script'};
+            if (variables && typeof variables === 'object') {
+                msg.variables = variables;
+            }
+            this.call(msg);
+        }
+
         genUuid() {
             return Date.now() + Math.floor(Math.random() * 1000);
         }
