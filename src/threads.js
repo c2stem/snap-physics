@@ -1527,6 +1527,12 @@ Process.prototype.doSetVar = function (varName, value) {
         return;
     }
     varFrame.setVar(name, value, this.blockReceiver());
+    var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph);
+    if (ide && ide.globalVariables.allNames().includes(name)) {
+        ide.events.dispatchEvent(new CustomEvent('globalVariableChanged', {
+            detail: { variable: name, value: value }
+        }));
+    }
 };
 
 Process.prototype.doChangeVar = function (varName, value) {

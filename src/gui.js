@@ -658,6 +658,9 @@ IDE_Morph.prototype.interpretUrlAnchors = async function (loc) {
         } else {
             await this.droppedText(value, varName, 'text');
         }
+        this.events.dispatchEvent(new CustomEvent('variableSet', {
+            detail: { variable: varName, value: value }
+        }));
     }
 };
 
