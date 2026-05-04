@@ -1550,6 +1550,12 @@ Process.prototype.doChangeVar = function (varName, value) {
         }
     }
     varFrame.changeVar(name, value, this.blockReceiver());
+    var ide = this.homeContext.receiver.parentThatIsA(IDE_Morph);
+    if (ide && ide.globalVariables.allNames().includes(name)) {
+        ide.events.dispatchEvent(new CustomEvent('globalVariableChanged', {
+            detail: { variable: name, value: ide.globalVariables.getVar(name) }
+        }));
+    }
 };
 
 Process.prototype.doIncreaseVar = function (varName, value) {

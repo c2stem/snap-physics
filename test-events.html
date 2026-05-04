@@ -1,406 +1,510 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Embedded API Event Tester</title>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embedded API Event Tester</title>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      background: #0f1117;
-      color: #e2e8f0;
-      height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr;
-      overflow: hidden;
-    }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background: #0f1117;
+        color: #e2e8f0;
+        height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        overflow: hidden;
+      }
 
-    header {
-      background: #1a1d27;
-      border-bottom: 1px solid #2d3148;
-      padding: 10px 16px;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
+      header {
+        background: #1a1d27;
+        border-bottom: 1px solid #2d3148;
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
 
-    header h1 { font-size: 15px; font-weight: 600; color: #a78bfa; }
+      header h1 {
+        font-size: 15px;
+        font-weight: 600;
+        color: #a78bfa;
+      }
 
-    .status-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: #4b5563;
-      flex-shrink: 0;
-      transition: background 0.3s;
-    }
-    .status-dot.ready { background: #34d399; box-shadow: 0 0 6px #34d399; }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4b5563;
+        flex-shrink: 0;
+        transition: background 0.3s;
+      }
+      .status-dot.ready {
+        background: #34d399;
+        box-shadow: 0 0 6px #34d399;
+      }
 
-    #status-text { font-size: 12px; color: #6b7280; }
+      #status-text {
+        font-size: 12px;
+        color: #6b7280;
+      }
 
-    .main {
-      display: grid;
-      grid-template-columns: 1fr 380px;
-      overflow: hidden;
-    }
+      .main {
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        overflow: hidden;
+      }
 
-    /* ── Editor iframe ── */
-    #editor-wrap {
-      position: relative;
-      background: #000;
-    }
+      /* ── Editor iframe ── */
+      #editor-wrap {
+        position: relative;
+        background: #000;
+      }
 
-    #editor {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
+      #editor {
+        width: 100%;
+        height: 100%;
+        border: none;
+        display: block;
+      }
 
-    #loading-overlay {
-      position: absolute;
-      inset: 0;
-      background: #0f1117;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      transition: opacity 0.4s;
-    }
+      #loading-overlay {
+        position: absolute;
+        inset: 0;
+        background: #0f1117;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        transition: opacity 0.4s;
+      }
 
-    #loading-overlay.hidden { opacity: 0; pointer-events: none; }
+      #loading-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
 
-    .spinner {
-      width: 32px; height: 32px;
-      border: 3px solid #2d3148;
-      border-top-color: #a78bfa;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
+      .spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #2d3148;
+        border-top-color: #a78bfa;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
 
-    @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
 
-    /* ── Sidebar ── */
-    .sidebar {
-      background: #1a1d27;
-      border-left: 1px solid #2d3148;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      overflow: hidden;
-    }
+      /* ── Sidebar ── */
+      .sidebar {
+        background: #1a1d27;
+        border-left: 1px solid #2d3148;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        overflow: hidden;
+      }
 
-    .sidebar-header {
-      padding: 10px 14px;
-      border-bottom: 1px solid #2d3148;
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      color: #6b7280;
-      text-transform: uppercase;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+      .sidebar-header {
+        padding: 10px 14px;
+        border-bottom: 1px solid #2d3148;
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: #6b7280;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
 
-    #clear-btn {
-      background: none;
-      border: 1px solid #2d3148;
-      color: #6b7280;
-      font-size: 11px;
-      padding: 2px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    #clear-btn:hover { border-color: #4b5563; color: #9ca3af; }
+      #clear-btn {
+        background: none;
+        border: 1px solid #2d3148;
+        color: #6b7280;
+        font-size: 11px;
+        padding: 2px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      #clear-btn:hover {
+        border-color: #4b5563;
+        color: #9ca3af;
+      }
 
-    #log {
-      overflow-y: auto;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+      #log {
+        overflow-y: auto;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
 
-    #log::-webkit-scrollbar { width: 4px; }
-    #log::-webkit-scrollbar-track { background: transparent; }
-    #log::-webkit-scrollbar-thumb { background: #2d3148; border-radius: 2px; }
+      #log::-webkit-scrollbar {
+        width: 4px;
+      }
+      #log::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      #log::-webkit-scrollbar-thumb {
+        background: #2d3148;
+        border-radius: 2px;
+      }
 
-    .event-card {
-      border-radius: 6px;
-      padding: 8px 10px;
-      font-size: 12px;
-      border-left: 3px solid;
-      animation: slideIn 0.2s ease;
-    }
+      .event-card {
+        border-radius: 6px;
+        padding: 8px 10px;
+        font-size: 12px;
+        border-left: 3px solid;
+        animation: slideIn 0.2s ease;
+      }
 
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
 
-    .event-card.rpcCalled         { background: #1e1b4b; border-color: #818cf8; }
-    .event-card.globalVariable    { background: #064e3b; border-color: #34d399; }
-    .event-card.variableSet       { background: #451a03; border-color: #f97316; }
+      .event-card.rpcCalled {
+        background: #1e1b4b;
+        border-color: #818cf8;
+      }
+      .event-card.globalVariable {
+        background: #064e3b;
+        border-color: #34d399;
+      }
+      .event-card.variableSet {
+        background: #451a03;
+        border-color: #f97316;
+      }
 
-    .event-tag {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
+      .event-tag {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        margin-bottom: 4px;
+      }
 
-    .rpcCalled      .event-tag { color: #818cf8; }
-    .globalVariable .event-tag { color: #34d399; }
-    .variableSet    .event-tag { color: #f97316; }
+      .rpcCalled .event-tag {
+        color: #818cf8;
+      }
+      .globalVariable .event-tag {
+        color: #34d399;
+      }
+      .variableSet .event-tag {
+        color: #f97316;
+      }
 
-    .event-time {
-      font-size: 10px;
-      color: #4b5563;
-      float: right;
-    }
+      .event-time {
+        font-size: 10px;
+        color: #4b5563;
+        float: right;
+      }
 
-    .event-body { color: #cbd5e1; line-height: 1.5; }
-    .event-body strong { color: #f1f5f9; font-weight: 600; }
+      .event-body {
+        color: #cbd5e1;
+        line-height: 1.5;
+      }
+      .event-body strong {
+        color: #f1f5f9;
+        font-weight: 600;
+      }
 
-    .empty-state {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #374151;
-      font-size: 13px;
-      gap: 8px;
-      padding: 20px;
-      text-align: center;
-    }
+      .empty-state {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #374151;
+        font-size: 13px;
+        gap: 8px;
+        padding: 20px;
+        text-align: center;
+      }
 
-    .empty-icon { font-size: 32px; }
+      .empty-icon {
+        font-size: 32px;
+      }
 
-    /* ── Test triggers ── */
-    .triggers {
-      border-top: 1px solid #2d3148;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
+      /* ── Test triggers ── */
+      .triggers {
+        border-top: 1px solid #2d3148;
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
 
-    .triggers-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      color: #4b5563;
-      text-transform: uppercase;
-      margin-bottom: 2px;
-    }
+      .triggers-label {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        color: #4b5563;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+      }
 
-    .trigger-row { display: flex; gap: 6px; }
+      .trigger-row {
+        display: flex;
+        gap: 6px;
+      }
 
-    .trigger-row input {
-      flex: 1;
-      background: #0f1117;
-      border: 1px solid #2d3148;
-      border-radius: 4px;
-      color: #e2e8f0;
-      font-size: 12px;
-      padding: 5px 8px;
-      outline: none;
-    }
-    .trigger-row input:focus { border-color: #4b5563; }
-    .trigger-row input::placeholder { color: #374151; }
+      .trigger-row input {
+        flex: 1;
+        background: #0f1117;
+        border: 1px solid #2d3148;
+        border-radius: 4px;
+        color: #e2e8f0;
+        font-size: 12px;
+        padding: 5px 8px;
+        outline: none;
+      }
+      .trigger-row input:focus {
+        border-color: #4b5563;
+      }
+      .trigger-row input::placeholder {
+        color: #374151;
+      }
 
-    .trigger-btn {
-      background: #2d3148;
-      border: none;
-      border-radius: 4px;
-      color: #a78bfa;
-      font-size: 11px;
-      font-weight: 600;
-      padding: 5px 10px;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    .trigger-btn:hover { background: #373d5e; }
-    .trigger-btn:disabled { opacity: 0.4; cursor: default; }
+      .trigger-btn {
+        background: #2d3148;
+        border: none;
+        border-radius: 4px;
+        color: #a78bfa;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 5px 10px;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .trigger-btn:hover {
+        background: #373d5e;
+      }
+      .trigger-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+      }
 
-    .hint {
-      font-size: 10px;
-      color: #374151;
-      line-height: 1.4;
-    }
-  </style>
-</head>
-<body>
+      .hint {
+        font-size: 10px;
+        color: #374151;
+        line-height: 1.4;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="status-dot" id="status-dot"></div>
+      <h1>Embedded API Event Tester</h1>
+      <span id="status-text">Loading editor…</span>
+    </header>
 
-<header>
-  <div class="status-dot" id="status-dot"></div>
-  <h1>Embedded API Event Tester</h1>
-  <span id="status-text">Loading editor…</span>
-</header>
+    <div class="main">
+      <div id="editor-wrap">
+        <iframe
+          id="editor"
+          src="https://editor.c2stem.org"
+          allow="camera; microphone"
+        ></iframe>
+        <div id="loading-overlay">
+          <div class="spinner"></div>
+          <span style="font-size: 13px; color: #4b5563"
+            >Initializing editor…</span
+          >
+        </div>
+      </div>
 
-<div class="main">
-  <div id="editor-wrap">
-    <iframe id="editor" src="https://editor.c2stem.org" allow="camera;microphone"></iframe>
-    <div id="loading-overlay">
-      <div class="spinner"></div>
-      <span style="font-size:13px;color:#4b5563">Initializing editor…</span>
-    </div>
-  </div>
+      <div class="sidebar">
+        <div class="sidebar-header">
+          Event Log
+          <button id="clear-btn">Clear</button>
+        </div>
 
-  <div class="sidebar">
-    <div class="sidebar-header">
-      Event Log
-      <button id="clear-btn">Clear</button>
-    </div>
+        <div id="log">
+          <div class="empty-state" id="empty-state">
+            <span class="empty-icon">📡</span>
+            <span>Events will appear here once the editor is ready.</span>
+            <span
+              >Try calling a CloudVariables RPC or setting a variable inside a
+              Snap script.</span
+            >
+          </div>
+        </div>
 
-    <div id="log">
-      <div class="empty-state" id="empty-state">
-        <span class="empty-icon">📡</span>
-        <span>Events will appear here once the editor is ready.</span>
-        <span>Try calling a CloudVariables RPC or setting a variable inside a Snap script.</span>
+        <div class="triggers">
+          <div class="triggers-label">Test: variableSet (URL param)</div>
+          <div class="trigger-row">
+            <input
+              id="var-name"
+              type="text"
+              placeholder="Variable name"
+              value="currentMaterial"
+            />
+            <input
+              id="var-value"
+              type="text"
+              placeholder="Value"
+              value="lesson1"
+            />
+            <button class="trigger-btn" id="set-var-btn" disabled>
+              Reload
+            </button>
+          </div>
+          <div class="hint">
+            Reloads the iframe with <code>?setVariable=name=value</code> — fires
+            the <strong style="color: #f97316">variableSet</strong> event on
+            load.
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="triggers">
-      <div class="triggers-label">Test: variableSet (URL param)</div>
-      <div class="trigger-row">
-        <input id="var-name"  type="text" placeholder="Variable name"  value="currentMaterial">
-        <input id="var-value" type="text" placeholder="Value" value="lesson1">
-        <button class="trigger-btn" id="set-var-btn" disabled>Reload</button>
-      </div>
-      <div class="hint">Reloads the iframe with <code>?setVariable=name=value</code> — fires the <strong style="color:#f97316">variableSet</strong> event on load.</div>
-    </div>
-  </div>
-</div>
+    <script src="https://editor.c2stem.org/embedded-api.js"></script>
+    <script>
+      const iframe = document.getElementById("editor");
+      const logEl = document.getElementById("log");
+      const emptyState = document.getElementById("empty-state");
+      const statusDot = document.getElementById("status-dot");
+      const statusText = document.getElementById("status-text");
+      const setVarBtn = document.getElementById("set-var-btn");
 
-<script src="embedded-api.js"></script>
-<script>
-  const iframe     = document.getElementById('editor');
-  const logEl      = document.getElementById('log');
-  const emptyState = document.getElementById('empty-state');
-  const statusDot  = document.getElementById('status-dot');
-  const statusText = document.getElementById('status-text');
-  const setVarBtn  = document.getElementById('set-var-btn');
+      let api = null;
+      let eventCount = 0;
 
-  let api = null;
-  let eventCount = 0;
+      function timestamp() {
+        return new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+      }
 
-  function timestamp() {
-    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  }
+      function appendEvent(type, cssClass, labelText, bodyHTML) {
+        eventCount++;
+        if (emptyState) emptyState.remove();
 
-  function appendEvent(type, cssClass, labelText, bodyHTML) {
-    eventCount++;
-    if (emptyState) emptyState.remove();
-
-    const card = document.createElement('div');
-    card.className = `event-card ${cssClass}`;
-    card.innerHTML = `
+        const card = document.createElement("div");
+        card.className = `event-card ${cssClass}`;
+        card.innerHTML = `
       <div class="event-tag">${labelText}<span class="event-time">${timestamp()}</span></div>
       <div class="event-body">${bodyHTML}</div>
     `;
-    logEl.appendChild(card);
-    logEl.scrollTop = logEl.scrollHeight;
-  }
+        logEl.appendChild(card);
+        logEl.scrollTop = logEl.scrollHeight;
+      }
 
-  function formatParams(params) {
-    if (!params || Object.keys(params).length === 0) return '<em style="color:#4b5563">none</em>';
-    return Object.entries(params)
-      .map(([k, v]) => `<strong>${k}</strong>: ${JSON.stringify(v)}`)
-      .join(' &nbsp;·&nbsp; ');
-  }
+      function formatParams(params) {
+        if (!params || Object.keys(params).length === 0)
+          return '<em style="color:#4b5563">none</em>';
+        return Object.entries(params)
+          .map(([k, v]) => `<strong>${k}</strong>: ${JSON.stringify(v)}`)
+          .join(" &nbsp;·&nbsp; ");
+      }
 
-  async function attachListeners() {
-    api = new EmbeddedNetsBloxAPI(iframe);
+      async function attachListeners() {
+        api = new EmbeddedNetsBloxAPI(iframe);
 
-    await api.addEventListener('rpcCalled', (event) => {
-      const { service, rpc, params } = event.detail;
-      appendEvent(
-        'rpcCalled',
-        'rpcCalled',
-        'rpcCalled',
-        `<strong>${service}</strong> / <strong>${rpc}</strong><br>${formatParams(params)}`
-      );
-    });
+        await api.addEventListener("rpcCalled", (event) => {
+          const { service, rpc, params } = event.detail;
+          appendEvent(
+            "rpcCalled",
+            "rpcCalled",
+            "rpcCalled",
+            `<strong>${service}</strong> / <strong>${rpc}</strong><br>${formatParams(params)}`,
+          );
+        });
 
-    await api.addEventListener('globalVariableChanged', (event) => {
-      const { variable, value } = event.detail;
-      appendEvent(
-        'globalVariableChanged',
-        'globalVariable',
-        'globalVariableChanged',
-        `<strong>${variable}</strong> = ${JSON.stringify(value)}`
-      );
-    });
+        await api.addEventListener("globalVariableChanged", (event) => {
+          const { variable, value } = event.detail;
+          appendEvent(
+            "globalVariableChanged",
+            "globalVariable",
+            "globalVariableChanged",
+            `<strong>${variable}</strong> = ${JSON.stringify(value)}`,
+          );
+        });
 
-    await api.addEventListener('variableSet', (event) => {
-      const { variable, value } = event.detail;
-      appendEvent(
-        'variableSet',
-        'variableSet',
-        'variableSet (URL param)',
-        `<strong>${variable}</strong> = ${JSON.stringify(value)}`
-      );
-    });
+        await api.addEventListener("variableSet", (event) => {
+          const { variable, value } = event.detail;
+          appendEvent(
+            "variableSet",
+            "variableSet",
+            "variableSet (URL param)",
+            `<strong>${variable}</strong> = ${JSON.stringify(value)}`,
+          );
+        });
 
-    statusDot.classList.add('ready');
-    statusText.textContent = 'Listening — 3 events active';
-    setVarBtn.disabled = false;
-    document.getElementById('loading-overlay').classList.add('hidden');
-  }
+        statusDot.classList.add("ready");
+        statusText.textContent = "Listening — 3 events active";
+        setVarBtn.disabled = false;
+        document.getElementById("loading-overlay").classList.add("hidden");
+      }
 
-  // The editor fires window.dispatchEvent('ideLoaded') inside the iframe.
-  // We bridge it out via a one-time postMessage so the parent knows when to attach.
-  iframe.addEventListener('load', () => {
-    // Inject a tiny bridge script into the iframe that forwards ideLoaded via postMessage.
-    try {
-      const iframeWin = iframe.contentWindow;
-      iframeWin.addEventListener('ideLoaded', () => {
-        window.postMessage({ type: '__ideLoaded__' }, '*');
+      // The editor fires window.dispatchEvent('ideLoaded') inside the iframe.
+      // We bridge it out via a one-time postMessage so the parent knows when to attach.
+      iframe.addEventListener("load", () => {
+        // Inject a tiny bridge script into the iframe that forwards ideLoaded via postMessage.
+        try {
+          const iframeWin = iframe.contentWindow;
+          iframeWin.addEventListener("ideLoaded", () => {
+            window.postMessage({ type: "__ideLoaded__" }, "*");
+          });
+        } catch (e) {
+          // Cross-origin fallback: just wait 3 s
+          setTimeout(attachListeners, 3000);
+        }
       });
-    } catch(e) {
-      // Cross-origin fallback: just wait 3 s
-      setTimeout(attachListeners, 3000);
-    }
-  });
 
-  window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === '__ideLoaded__') {
-      attachListeners();
-    }
-  });
+      window.addEventListener("message", (e) => {
+        if (e.data && e.data.type === "__ideLoaded__") {
+          attachListeners();
+        }
+      });
 
-  // Clear log
-  document.getElementById('clear-btn').addEventListener('click', () => {
-    logEl.innerHTML = '';
-    eventCount = 0;
-    const es = document.createElement('div');
-    es.className = 'empty-state';
-    es.id = 'empty-state';
-    es.innerHTML = `
+      // Clear log
+      document.getElementById("clear-btn").addEventListener("click", () => {
+        logEl.innerHTML = "";
+        eventCount = 0;
+        const es = document.createElement("div");
+        es.className = "empty-state";
+        es.id = "empty-state";
+        es.innerHTML = `
       <span class="empty-icon">📡</span>
       <span>Events will appear here once the editor is ready.</span>
       <span>Try calling a CloudVariables RPC or setting a variable inside a Snap script.</span>
     `;
-    logEl.appendChild(es);
-  });
+        logEl.appendChild(es);
+      });
 
-  // variableSet trigger: reload iframe with ?setVariable= param
-  setVarBtn.addEventListener('click', () => {
-    const name  = document.getElementById('var-name').value.trim();
-    const value = document.getElementById('var-value').value.trim();
-    if (!name) return;
-    statusDot.classList.remove('ready');
-    statusText.textContent = 'Reloading…';
-    setVarBtn.disabled = true;
-    document.getElementById('loading-overlay').classList.remove('hidden');
-    iframe.src = `https://editor.c2stem.org?setVariable=${encodeURIComponent(name + '=' + value)}`;
-  });
-</script>
-
-</body>
+      // variableSet trigger: reload iframe with ?setVariable= param
+      setVarBtn.addEventListener("click", () => {
+        const name = document.getElementById("var-name").value.trim();
+        const value = document.getElementById("var-value").value.trim();
+        if (!name) return;
+        statusDot.classList.remove("ready");
+        statusText.textContent = "Reloading…";
+        setVarBtn.disabled = true;
+        document.getElementById("loading-overlay").classList.remove("hidden");
+        iframe.src = `https://editor.c2stem.org?setVariable=${encodeURIComponent(name + "=" + value)}`;
+      });
+    </script>
+  </body>
 </html>
