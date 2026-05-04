@@ -1552,6 +1552,23 @@ Process.prototype.doChangeVar = function (varName, value) {
     varFrame.changeVar(name, value, this.blockReceiver());
 };
 
+Process.prototype.doIncreaseVar = function (varName, value) {
+    var varFrame = this.context.variables,
+        name = varName;
+
+    if (name instanceof Context) {
+        if (name.expression.selector === 'reportGetVar') {
+            name.variables.changeVar(
+                name.expression.blockSpec,
+                value,
+                this.blockReceiver()
+            );
+            return;
+        }
+    }
+    varFrame.changeVar(name, value, this.blockReceiver());
+};
+
 Process.prototype.reportGetVar = function () {
     // assumes a getter block whose blockSpec is a variable name
     return this.context.variables.getVar(
@@ -6632,6 +6649,12 @@ JSCompiler.prototype.compileExpression = function (block) {
             this.compileInput(inputs[1]) +
             ')';
     case 'doChangeVar': // redirect var to process
+        return 'arguments[arguments.length - 1].incrementVarNamed(' +
+            this.compileInput(inputs[0]) +
+            ',' +
+            this.compileInput(inputs[1]) +
+            ')';
+    case 'doIncreaseVar': // redirect var to process
         return 'arguments[arguments.length - 1].incrementVarNamed(' +
             this.compileInput(inputs[0]) +
             ',' +

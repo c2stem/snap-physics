@@ -1220,6 +1220,12 @@ SpriteMorph.prototype.initBlocks = function () {
             spec: 'change %var by %n',
             defaults: [null, 1]
         },
+        doIncreaseVar: {
+            type: 'command',
+            category: 'variables',
+            spec: 'increase %var by %n',
+            defaults: [null, 1]
+        },
         doShowVar: {
             type: 'command',
             category: 'variables',
@@ -1627,8 +1633,9 @@ SpriteMorph.prototype.blockAlternatives = {
     reportOr: ['reportAnd'],
 
     // variables
-    doSetVar: ['doChangeVar'],
-    doChangeVar: ['doSetVar'],
+    doSetVar: ['doChangeVar', 'doIncreaseVar'],
+    doChangeVar: ['doSetVar', 'doIncreaseVar'],
+    doIncreaseVar: ['doSetVar', 'doChangeVar'],
     doShowVar: ['doHideVar'],
     doHideVar: ['doShowVar'],
 
@@ -2694,6 +2701,7 @@ SpriteMorph.prototype.blockTemplates = function (category) {
 
         blocks.push(block('doSetVar'));
         blocks.push(block('doChangeVar'));
+        blocks.push(block('doIncreaseVar'));
         blocks.push(block('doShowVar'));
         blocks.push(block('doHideVar'));
         blocks.push(block('doDeclareVariables'));
@@ -2798,11 +2806,13 @@ SpriteMorph.prototype.makeBlockButton = function (category) {
     button.userMenu = function () {
         var menu = new MenuMorph(this);
         menu.addItem('help...', 'showHelp');
+        menu.addItem('hide', 'hideBlock');
         return menu;
     };
 
     button.selector = 'addCustomBlock';
     button.showHelp = BlockMorph.prototype.showHelp;
+    button.hideBlock = BlockMorph.prototype.hidePrimitive;
     return button;
 };
 
@@ -8970,6 +8980,7 @@ StageMorph.prototype.blockTemplates = function (category) {
 
         blocks.push(block('doSetVar'));
         blocks.push(block('doChangeVar'));
+        blocks.push(block('doIncreaseVar'));
         blocks.push(block('doShowVar'));
         blocks.push(block('doHideVar'));
         blocks.push(block('doDeclareVariables'));
