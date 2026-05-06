@@ -406,12 +406,14 @@ Process.prototype.getJSFromRPCDropdown = function (service, rpc, params) {
             throw new Error(msg);
         }
 
-        const ide = this.homeContext.receiver.parentThatIsA(IDE_Morph);
-        if (ide) {
-            const serviceName = isServiceURL ? serviceURL.split('/').pop() : service;
-            ide.events.dispatchEvent(new CustomEvent('rpcCalled', {
-                detail: { service: serviceName, rpc, params: params || {} }
-            }));
+        if (!this.rpcRequest) {
+            const ide = this.homeContext.receiver.parentThatIsA(IDE_Morph);
+            if (ide) {
+                const serviceName = isServiceURL ? serviceURL.split('/').pop() : service;
+                ide.events.dispatchEvent(new CustomEvent('rpcCalled', {
+                    detail: { service: serviceName, rpc, params: params || {} }
+                }));
+            }
         }
 
         const url = [
