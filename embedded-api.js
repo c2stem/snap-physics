@@ -100,9 +100,26 @@
       });
     }
 
-    async runProject() {
+    async runProject(variables) {
+      const msg = { type: "run-script" };
+      if (variables && typeof variables === "object") {
+        msg.variables = variables;
+      }
+      this.call(msg);
+    }
+
+    setVariable(key, value) {
       this.call({
-        type: "run-script",
+        type: "set-variable",
+        key,
+        value,
+      });
+    }
+
+    deleteVariable(key) {
+      this.call({
+        type: "delete-variable",
+        key,
       });
     }
 
