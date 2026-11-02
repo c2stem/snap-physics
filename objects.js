@@ -2505,6 +2505,16 @@ SpriteMorph.prototype.freshPalette = function (category) {
             function () {myself.searchBlocks(); },
             '⌘F'
         );
+        if (shiftClicked) {
+            menu.addItem(
+                'hide blocks...',
+                function () {
+                    new BlockVisibilityDialogMorph(ide).popUp(ide.world());
+                },
+                'choose which blocks are\nshown in the palette',
+                new Color(100, 0, 0)
+            );
+        }
         if (shiftClicked && canHidePrimitives()) {
             menu.addItem(
                 'hide primitives',

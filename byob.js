@@ -127,6 +127,7 @@ var JaggedBlockMorph;
 var BlockExportDialogMorph;
 var BlockImportDialogMorph;
 var BlockRemovalDialogMorph;
+var BlockVisibilityDialogMorph;
 
 // CustomBlockDefinition ///////////////////////////////////////////////
 
@@ -3633,6 +3634,267 @@ BlockExportDialogMorph.prototype.exportBlocks = function () {
 // BlockExportDialogMorph layout
 
 BlockExportDialogMorph.prototype.fixLayout
+    = BlockEditorMorph.prototype.fixLayout;
+
+// BlockVisibilityDialogMorph ////////////////////////////////////////////////
+
+// A checklist of every primitive shown in the palettes. Ticked blocks get
+// hidden when the dialog is accepted, unticked ones are shown again.
+
+// BlockVisibilityDialogMorph inherits from DialogBoxMorph:
+
+BlockVisibilityDialogMorph.prototype = new DialogBoxMorph();
+BlockVisibilityDialogMorph.prototype.constructor = BlockVisibilityDialogMorph;
+BlockVisibilityDialogMorph.uber = DialogBoxMorph.prototype;
+
+// BlockVisibilityDialogMorph constants:
+
+BlockVisibilityDialogMorph.prototype.key = 'blockVisibility';
+
+// drawing every block is slow, so their pictures are shared between dialogs:
+BlockVisibilityDialogMorph.prototype.imageCache = {};
+BlockVisibilityDialogMorph.prototype.imageCacheLanguage = null;
+
+// BlockVisibilityDialogMorph instance creation:
+
+function BlockVisibilityDialogMorph(ide) {
+    this.init(ide);
+}
+
+BlockVisibilityDialogMorph.prototype.init = function (ide) {
+    var myself = this,
+        hidden = StageMorph.prototype.hiddenPrimitives;
+
+    // additional properties:
+    this.ide = ide;
+    this.handle = null;
+    this.templates = this.collectTemplates();
+    this.hiddenSelectors = {}; // the dialog's working copy
+    this.templates.forEach(function (template) {
+        if (hidden[template.selector]) {
+            myself.hiddenSelectors[template.selector] = true;
+        }
+    });
+
+    // initialize inherited properties:
+    BlockVisibilityDialogMorph.uber.init.call(
+        this,
+        ide, // target
+        function () {myself.applyVisibility(); },
+        null // environment
+    );
+
+    // override inherited properites:
+    this.labelString = 'Hide blocks';
+    this.createLabel();
+
+    // build contents
+    this.buildContents();
+};
+
+BlockVisibilityDialogMorph.prototype.collectTemplates = function () {
+    // answer the unique hideable primitives in palette order, as
+    // {selector, paletteCategory} entries. Hidden and concept-disabled blocks
+    // are included: hiding applies to the whole project, while concept levels
+    // differ from one sprite to the next.
+    //
+    // The palette definitions are the only record of what each palette shows,
+    // so they get replayed with blockForSelector stubbed out to skip drawing.
+    // Only stubs are collected, which leaves out variables and custom concepts
+    // since those are built without blockForSelector and can't be hidden.
+    var sprite = this.ide.currentSprite instanceof SpriteMorph ?
+                this.ide.currentSprite : this.ide.sprites.at(1),
+        owners = sprite ? [sprite, this.ide.stage] : [this.ide.stage],
+        hidden = StageMorph.prototype.hiddenPrimitives,
+        blockForSelector = SpriteMorph.prototype.blockForSelector,
+        seen = {},
+        result = [];
+
+    function notDisabled() {return false; }
+
+    StageMorph.prototype.hiddenPrimitives = {};
+    SpriteMorph.prototype.blockForSelector = function (selector) {
+        return {selector: selector, isVisibilityStub: true};
+    };
+    if (sprite) {sprite.isBlockDisabled = notDisabled; }
+    try {
+        SpriteMorph.prototype.categories.forEach(function (category) {
+            owners.forEach(function (owner) {
+                owner.blockTemplates(category).forEach(function (template) {
+                    if (template && template.isVisibilityStub &&
+                            SpriteMorph.prototype.blocks[template.selector] &&
+                            !seen[template.selector]) {
+                        seen[template.selector] = true;
+                        result.push({
+                            selector: template.selector,
+                            paletteCategory: category
+                        });
+                    }
+                });
+            });
+        });
+    } finally {
+        StageMorph.prototype.hiddenPrimitives = hidden;
+        SpriteMorph.prototype.blockForSelector = blockForSelector;
+        if (sprite) {delete sprite.isBlockDisabled; } // back to inherited
+    }
+    return result;
+};
+
+BlockVisibilityDialogMorph.prototype.blockImage = function (selector) {
+    var proto = BlockVisibilityDialogMorph.prototype;
+    if (proto.imageCacheLanguage !== SnapTranslator.language) {
+        proto.imageCacheLanguage = SnapTranslator.language;
+        proto.imageCache = {};
+    }
+    if (!proto.imageCache[selector]) {
+        proto.imageCache[selector] =
+            SpriteMorph.prototype.blockForSelector(selector, true).fullImage();
+    }
+    return proto.imageCache[selector];
+};
+
+BlockVisibilityDialogMorph.prototype.buildContents = function () {
+    var palette, lastCat, x, y,
+        myself = this,
+        padding = 4;
+
+    palette = new ScrollFrameMorph(
+        null,
+        null,
+        SpriteMorph.prototype.sliderColor
+    );
+    palette.color = SpriteMorph.prototype.paletteColor;
+    palette.padding = padding;
+    palette.isDraggable = false;
+    palette.acceptsDrops = false;
+    palette.contents.acceptsDrops = false;
+
+    x = palette.left() + padding;
+    y = palette.top() + padding;
+    this.templates.forEach(function (template) {
+        var selector = template.selector,
+            header,
+            checkBox;
+
+        if (template.paletteCategory !== lastCat) {
+            lastCat = template.paletteCategory;
+            header = new TextMorph(
+                localize(lastCat[0].toUpperCase() + lastCat.slice(1)),
+                12,
+                null,
+                true, // bold
+                false,
+                null,
+                null,
+                null,
+                new Point(-1, -1),
+                new Color(255, 255, 255, 0.2)
+            );
+            header.color = new Color(255, 255, 255);
+            header.drawNew();
+            y += padding;
+            header.setPosition(new Point(x, y));
+            palette.addContents(header);
+            y += header.height() + padding;
+        }
+
+        checkBox = new ToggleMorph(
+            'checkbox',
+            myself,
+            function () {
+                if (myself.hiddenSelectors[selector]) {
+                    delete myself.hiddenSelectors[selector];
+                } else {
+                    myself.hiddenSelectors[selector] = true;
+                }
+            },
+            null,
+            function () {
+                return !!myself.hiddenSelectors[selector];
+            },
+            null,
+            null,
+            null,
+            myself.blockImage(selector)
+        );
+        checkBox.setPosition(new Point(
+            x,
+            y + (checkBox.top() - checkBox.toggleElement.top())
+        ));
+        palette.addContents(checkBox);
+        y += checkBox.fullBounds().height() + padding;
+    });
+
+    palette.scrollX(padding);
+    palette.scrollY(padding);
+    this.addBody(palette);
+
+    this.addButton('selectAll', 'Hide all');
+    this.addButton('selectNone', 'Show all');
+    this.addButton('ok', 'OK');
+    this.addButton('cancel', 'Cancel');
+
+    this.setExtent(new Point(420, 480));
+    this.fixLayout();
+};
+
+BlockVisibilityDialogMorph.prototype.popUp = function (wrrld) {
+    var world = wrrld || this.target.world();
+    if (world) {
+        BlockVisibilityDialogMorph.uber.popUp.call(this, world);
+        this.handle = new HandleMorph(
+            this,
+            340,
+            220,
+            this.corner,
+            this.corner
+        );
+    }
+};
+
+// BlockVisibilityDialogMorph ops
+
+BlockVisibilityDialogMorph.prototype.selectAll = function () {
+    var myself = this;
+    this.templates.forEach(function (template) {
+        myself.hiddenSelectors[template.selector] = true;
+    });
+    this.refreshCheckBoxes();
+};
+
+BlockVisibilityDialogMorph.prototype.selectNone = function () {
+    this.hiddenSelectors = {};
+    this.refreshCheckBoxes();
+};
+
+BlockVisibilityDialogMorph.prototype.refreshCheckBoxes = function () {
+    this.body.contents.children.forEach(function (child) {
+        if (child instanceof ToggleMorph) {
+            child.refresh();
+        }
+    });
+};
+
+BlockVisibilityDialogMorph.prototype.applyVisibility = function () {
+    var myself = this,
+        hidden = StageMorph.prototype.hiddenPrimitives;
+
+    // only touch listed blocks, others may be hidden for a different reason
+    this.templates.forEach(function (template) {
+        if (myself.hiddenSelectors[template.selector]) {
+            hidden[template.selector] = true;
+        } else {
+            delete hidden[template.selector];
+        }
+    });
+    this.ide.flushBlocksCache();
+    this.ide.refreshPalette();
+};
+
+// BlockVisibilityDialogMorph layout
+
+BlockVisibilityDialogMorph.prototype.fixLayout
     = BlockEditorMorph.prototype.fixLayout;
 
 // BlockImportDialogMorph ////////////////////////////////////////////////////
