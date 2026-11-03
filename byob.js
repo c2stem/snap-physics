@@ -3675,6 +3675,15 @@ BlockVisibilityDialogMorph.prototype.init = function (ide) {
             myself.hiddenSelectors[template.selector] = true;
         }
     });
+    this.tickedCategories = {}; // category checkboxes ticked in this dialog
+    this.completeAtOpen = {};
+    this.templates.forEach(function (template) {
+        var category = template.paletteCategory;
+        if (!myself.completeAtOpen.hasOwnProperty(category)) {
+            myself.completeAtOpen[category] =
+                myself.isCategoryComplete(category);
+        }
+    });
 
     // initialize inherited properties:
     BlockVisibilityDialogMorph.uber.init.call(
@@ -3756,8 +3765,12 @@ BlockVisibilityDialogMorph.prototype.blockImage = function (selector) {
 
 BlockVisibilityDialogMorph.prototype.buildContents = function () {
     var palette, lastCat, x, y,
+        categoryToggles = {},
         myself = this,
-        padding = 4;
+        padding = 4,
+        // every checkbox shares these backgrounds, drawing them is the
+        // bulk of the time it takes to open this dialog
+        buttonTemplate = new ToggleMorph('checkbox', this, nop);
 
     palette = new ScrollFrameMorph(
         null,
@@ -3774,29 +3787,18 @@ BlockVisibilityDialogMorph.prototype.buildContents = function () {
     y = palette.top() + padding;
     this.templates.forEach(function (template) {
         var selector = template.selector,
+            category = template.paletteCategory,
             header,
             checkBox;
 
-        if (template.paletteCategory !== lastCat) {
-            lastCat = template.paletteCategory;
-            header = new TextMorph(
-                localize(lastCat[0].toUpperCase() + lastCat.slice(1)),
-                12,
-                null,
-                true, // bold
-                false,
-                null,
-                null,
-                null,
-                new Point(-1, -1),
-                new Color(255, 255, 255, 0.2)
-            );
-            header.color = new Color(255, 255, 255);
-            header.drawNew();
+        if (category !== lastCat) {
+            lastCat = category;
+            header = myself.categoryToggle(category, buttonTemplate);
+            categoryToggles[category] = header;
             y += padding;
             header.setPosition(new Point(x, y));
-            palette.addContents(header);
-            y += header.height() + padding;
+            palette.contents.add(header);
+            y += header.fullBounds().height() + padding;
         }
 
         checkBox = new ToggleMorph(
@@ -3808,6 +3810,7 @@ BlockVisibilityDialogMorph.prototype.buildContents = function () {
                 } else {
                     myself.hiddenSelectors[selector] = true;
                 }
+                categoryToggles[category].refresh();
             },
             null,
             function () {
@@ -3815,16 +3818,18 @@ BlockVisibilityDialogMorph.prototype.buildContents = function () {
             },
             null,
             null,
-            null,
+            buttonTemplate,
             myself.blockImage(selector)
         );
         checkBox.setPosition(new Point(
             x,
             y + (checkBox.top() - checkBox.toggleElement.top())
         ));
-        palette.addContents(checkBox);
+        // not addContents, which redraws the whole list for every added row
+        palette.contents.add(checkBox);
         y += checkBox.fullBounds().height() + padding;
     });
+    palette.contents.adjustBounds();
 
     palette.scrollX(padding);
     palette.scrollY(padding);
@@ -3837,6 +3842,64 @@ BlockVisibilityDialogMorph.prototype.buildContents = function () {
 
     this.setExtent(new Point(420, 480));
     this.fixLayout();
+};
+
+BlockVisibilityDialogMorph.prototype.categoryToggle = function (
+    category,
+    buttonTemplate
+) {
+    // a checkbox ticked when every block of the category is ticked. Clicking
+    // it ticks the whole category, or unticks it if it already was complete.
+    // Ticking it this way also hides the category's button, see
+    // applyCategoryVisibility.
+    var myself = this,
+        toggle;
+
+    function isComplete() {
+        return myself.isCategoryComplete(category);
+    }
+
+    toggle = new ToggleMorph(
+        'checkbox',
+        this,
+        function () {
+            var complete = isComplete();
+            if (complete) {
+                delete myself.tickedCategories[category];
+            } else {
+                myself.tickedCategories[category] = true;
+            }
+            myself.templates.forEach(function (template) {
+                if (template.paletteCategory === category) {
+                    if (complete) {
+                        delete myself.hiddenSelectors[template.selector];
+                    } else {
+                        myself.hiddenSelectors[template.selector] = true;
+                    }
+                }
+            });
+            myself.refreshCheckBoxes();
+        },
+        category[0].toUpperCase() + category.slice(1),
+        isComplete,
+        null,
+        null,
+        buttonTemplate
+    );
+    toggle.isCategoryToggle = true;
+    toggle.label.color = new Color(255, 255, 255);
+    toggle.label.fontSize = 12;
+    toggle.label.drawNew();
+    toggle.fixLayout();
+    return toggle;
+};
+
+BlockVisibilityDialogMorph.prototype.isCategoryComplete = function (category) {
+    var myself = this;
+    return this.templates.every(function (template) {
+        return template.paletteCategory !== category ||
+            myself.hiddenSelectors[template.selector];
+    });
 };
 
 BlockVisibilityDialogMorph.prototype.popUp = function (wrrld) {
@@ -3889,7 +3952,61 @@ BlockVisibilityDialogMorph.prototype.applyVisibility = function () {
         }
     });
     this.ide.flushBlocksCache();
+    this.applyCategoryVisibility();
     this.ide.refreshPalette();
+};
+
+BlockVisibilityDialogMorph.prototype.applyCategoryVisibility = function () {
+    // A category's button gets hidden when its checkbox was ticked in this
+    // dialog. Ticking every block one by one, or "Hide all", doesn't hide it,
+    // so the button stays for categories that still show variables or other
+    // buttons. Unticking anything in a category that was complete when the
+    // dialog opened shows its button again. Buttons hidden with
+    // "hide category" are left alone otherwise.
+    var myself = this,
+        ide = this.ide,
+        hiddenCats = ide.hiddenCategories,
+        toHide = [],
+        toShow = [],
+        visible;
+
+    Object.keys(this.completeAtOpen).forEach(function (category) {
+        var complete = myself.isCategoryComplete(category);
+        if (contains(['lists', 'other'], category)) {
+            return; // these never have a button
+        }
+        if (complete && myself.tickedCategories[category] &&
+                !contains(hiddenCats, category)) {
+            toHide.push(category);
+        } else if (!complete && myself.completeAtOpen[category] &&
+                contains(hiddenCats, category)) {
+            toShow.push(category);
+        }
+    });
+    if (!toHide.length && !toShow.length) {return; }
+
+    // the category list needs at least one button
+    visible = SpriteMorph.prototype.categories.filter(function (category) {
+        return !contains(['lists', 'other'], category) &&
+            (!contains(hiddenCats, category) || contains(toShow, category)) &&
+            !contains(toHide, category);
+    });
+    if (!visible.length) {
+        toHide.shift();
+        new DialogBoxMorph().inform(
+            'Hide blocks',
+            'At least one category has to stay visible,\n' +
+                'so its button is still shown.',
+            ide.world()
+        );
+    }
+
+    ide.hiddenCategories = hiddenCats.filter(function (category) {
+        return !contains(toShow, category);
+    }).concat(toHide);
+    ide.createCategories();
+    ide.createPaletteHandle();
+    ide.fixLayout();
 };
 
 // BlockVisibilityDialogMorph layout
