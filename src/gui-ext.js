@@ -491,19 +491,42 @@ IDE_Morph.prototype.initializeEmbeddedAPI = function () {
         break;
       }
       case "stage-sprites": {
+        // Reports the material on each schoolyard tile of the engineering
+        // design project, e.g. { A: "grass", D: "concrete", ... }.
+        // Tiles are the single-letter sprites that own a "material-private"
+        // variable, so projects with a different number of tiles still work.
+        // The material is read from that variable (via the global "lookup"
+        // table) rather than from the costume, because hovering a tile
+        // temporarily swaps its costume to "construction"/"demoliton".
         let stageMaterials = {};
         const { id } = data;
         var stage = self.children.filter((morph) => morph.name === "Stage")[0];
-        var sprites = stage.children.filter((morph) =>
-          ["A", "D", "E", "F", "G", "I", "J", "L", "M", "N", "O", "P"].includes(
-            morph.name
+        const lookupVar = self.globalVariables.vars["lookup"];
+        const lookup = lookupVar ? lookupVar.value : null;
+        stage.children
+          .filter(
+            (morph) =>
+              morph instanceof SpriteMorph &&
+              /^[A-Z]$/.test(morph.name) &&
+              morph.variables &&
+              morph.variables.vars["material-private"]
           )
-        );
-        if (sprites.length === 12) {
-          sprites.map((morph) => {
-            stageMaterials[morph.name] = morph.costume.name;
+          .forEach((morph) => {
+            let material = morph.costume ? morph.costume.name : "clear";
+            try {
+              const materialId = Number(
+                morph.variables.vars["material-private"].value
+              );
+              if (!materialId) {
+                material = "clear";
+              } else if (lookup instanceof List) {
+                material = lookup.at(materialId).at(5).toString();
+              }
+            } catch (err) {
+              // fall back to the costume name
+            }
+            stageMaterials[morph.name] = material;
           });
-        }
         const type = "reply";
         event.source.postMessage({ id, type, stageMaterials }, event.origin);
         break;
